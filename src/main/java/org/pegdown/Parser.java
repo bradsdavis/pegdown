@@ -155,7 +155,9 @@ public class Parser extends BaseParser<Object> implements Extensions {
     }
     
     public Rule FencedCodeBlock() {
-        StringBuilderVar text = new StringBuilderVar();
+    	StringBuilderVar text = new StringBuilderVar();
+    	StringBuilderVar syntax = new StringBuilderVar();
+        
         Var<Integer> markerLength = new Var<Integer>();
         return NodeSequence(
                 CodeFence(markerLength),
@@ -179,6 +181,10 @@ public class Parser extends BaseParser<Object> implements Extensions {
                 push(match()),
                 Newline()
         );
+    }
+    
+    public Rule CodeSyntaxRule() {
+    	return ZeroOrMore(Alphanumeric(), push(match()));
     }
     
     public Rule HorizontalRule() {
@@ -862,7 +868,12 @@ public class Parser extends BaseParser<Object> implements Extensions {
         return NodeSequence(
                 Test('`'),
                 FirstOf(
-                        Code(Ticks(1)),
+                		CodeSyntax(Ticks(1)),
+                        CodeSyntax(Ticks(2)),
+                        CodeSyntax(Ticks(3)),
+                        CodeSyntax(Ticks(4)),
+                        CodeSyntax(Ticks(5)),
+                		Code(Ticks(1)),
                         Code(Ticks(2)),
                         Code(Ticks(3)),
                         Code(Ticks(4)),
@@ -873,16 +884,39 @@ public class Parser extends BaseParser<Object> implements Extensions {
 
     public Rule Code(Rule ticks) {
         return Sequence(
-                ticks, Sp(),
+                ticks,
+                Sp(),
                 OneOrMore(
                         FirstOf(
-                                Sequence(TestNot('`'), Nonspacechar()),
-                                Sequence(TestNot(ticks), OneOrMore('`')),
+                                Sequence(TestNot('`'), 
+                                		Nonspacechar()),
+                                Sequence(TestNot(ticks), 
+                                		OneOrMore('`')),
                                 Sequence(TestNot(Sp(), ticks),
                                         FirstOf(Spacechar(), Sequence(Newline(), TestNot(BlankLine()))))
                         )
                 ),
                 push(new CodeNode(match())),
+                Sp(), ticks
+        );
+    }
+
+    
+    public Rule CodeSyntax(Rule ticks) {
+        return Sequence(
+                ticks, Sequence(OneOrMore(Nonspacechar()), push(match())),
+                Sp(),
+                OneOrMore(
+                        FirstOf(
+                                Sequence(TestNot('`'), 
+                                		Nonspacechar()),
+                                Sequence(TestNot(ticks), 
+                                		OneOrMore('`')),
+                                Sequence(TestNot(Sp(), ticks),
+                                        FirstOf(Spacechar(), Sequence(Newline(), TestNot(BlankLine()))))
+                        )
+                ),
+                push(new CodeNode(match(), popAsString())),
                 Sp(), ticks
         );
     }

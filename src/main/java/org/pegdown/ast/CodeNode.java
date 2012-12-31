@@ -18,10 +18,26 @@
 
 package org.pegdown.ast;
 
+
+
 public class CodeNode extends TextNode {
+    private String syntax;
 
     public CodeNode(String text) {
+    	super(text);
+    }
+    
+    public CodeNode(String text, String syntax) {
         super(text);
+        this.syntax = syntax;
+    }
+
+    public String getSyntax() {
+    	return syntax;
+    }
+
+    public void setSyntax(String syntax) {
+    	this.syntax = syntax;	
     }
     
     @Override
